@@ -24,6 +24,16 @@ class Gauss(BaseModel):
         return Gauss(mu=new_mu, var=new_var)
 
 
+class Mult_gauss():
+    def __init__(self, dim, mu, matrix):
+        self.dim = dim
+        self.mu = mu
+        self.matrix = matrix
+
+    def __repr__(self):
+        return f'mu = {self.mu}\ncov = {self.matrix}\n'
+
+
 class Target():
     def __init__(self, x, speed):
         self.x = x
@@ -43,7 +53,7 @@ class Target():
 
 
 @validate_call
-def kalman(state, diff: Gauss, measurements: typing.List[Gauss]) -> typing.List[Gauss]:
+def kalman1D(state, diff: Gauss, measurements: typing.List[Gauss]) -> typing.List[Gauss]:
     ans = []
     for z in measurements:
         curr = state + diff
@@ -57,6 +67,6 @@ state = Gauss()
 diff = Gauss(mu = 2, var = 4)
 car = Target(1, 1)
 measurements = car.motion_and_measurement(100, 20)
-res = [elem.mu for elem in kalman(state, diff, measurements)]
+res = [elem.mu for elem in kalman1D(state, diff, measurements)]
 plt.plot(res)
 plt.show()

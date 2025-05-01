@@ -1,10 +1,13 @@
 import math
 import typing
-from pydantic import validate_arguments, BaseModel
+from pydantic import validate_call, BaseModel
+import numpy as np
+import matplotlib.pyplot as plt
+
 class Gauss(BaseModel):
     mu: float = 0
     var: float = 1
-    # Initialize x = Gauss(mu = a, var = b)
+    #Initialize Gauss(mu = x, var = sigma ** 2)
     @property
     def std(self):
         return math.sqrt(self.var)
@@ -13,17 +16,47 @@ class Gauss(BaseModel):
         return f'N({self.mu}, {self.var})'
     
     def __add__(self, other):
-        return Gauss(self.mu + other.mu, self.var + other.var)
+        return Gauss(mu=self.mu + other.mu, var=self.var + other.var)
 
     def __mul__(self, other):
-        new_mu = (self.var * other.mu + other.var * self.mu ) / (self.var + other.var)
+        new_mu = (self.var * other.mu + other.var * self.mu) / (self.var + other.var)
         new_var = (self.var * other.var) / (self.var + other.var)
-        return Gauss(new_mu, new_var)
+        return Gauss(mu=new_mu, var=new_var)
 
-@validate_arguments
-def kalman(state: Gauss, measurements : typing.List[Gauss]) -> typing.List[Gauss]:
-    x = Gauss()
-    return [x]
-x = Gauss(mu = 1, var = 2)
-y = Gauss()
-print(x.std)
+
+class Target():
+    def __init__(self, x, speed):
+        self.x = x
+        self.speed = speed
+    
+    def move(self):
+        self.x = self.x + self.speed
+    
+    def motion_and_measurement(self, n, var):
+        ans = []
+        for i in range(n):
+            self.move()
+            z = Gauss(mu = self.x + np.random.randn() * math.sqrt(var), var = var)
+            ans.append(z)
+        return ans
+
+
+
+@validate_call
+def kalman(state, diff: Gauss, measurements: typing.List[Gauss]) -> typing.List[Gauss]:
+    ans = []
+    for z in measurements:
+        curr = state + diff
+        curr = curr * z
+        ans.append(curr) 
+    return ans
+
+
+#Make simulation
+state = Gauss()
+diff = Gauss(mu = 2, var = 4)
+car = Target(1, 1)
+measurements = car.motion_and_measurement(100, 20)
+res = [elem.mu for elem in kalman(state, diff, measurements)]
+plt.plot(res)
+plt.show()

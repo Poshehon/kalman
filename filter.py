@@ -27,9 +27,10 @@ class Gauss(BaseModel):
 
 
 class Mult_gauss:
-    d: int = 1
-    mu: np.ndarray = np.array([[0]])
-    cov: np.ndarray = np.array([[1]])
+    def __init__(self, d, mu, cov):
+        self.d = d
+        self.mu = mu
+        self.cov = cov
 
     def __repr__(self):
         return f"mu = {self.mu}\ncov = {self.cov}\n"
@@ -65,14 +66,26 @@ def kalman1D(
     return ans
 
 
-def predict():
-    return
+def multikalman(
+        d: int, x: Mult_gauss, F: np.ndarray, u: np.ndarray, B: np.ndarray, H: np.ndarray,
+        R: np.ndarray, measurements: typing.List[float], Q: np.ndarray
+) -> typing.List[Mult_gauss]:
+    ans = []
+    for z in measurements:
+        # Prediction
+        new_mean = F @ x.mu + B @ u
+        new_cov = F @ x.cov @ F.T + Q
+        y = Mult_gauss(d = d, mu = new_mean, cov = new_cov)
+        # Updating
+        residual = z - H @ y.mu
+        gain = y.cov @ H.T @ np.linalg.inv(H @ y.cov @ H.T + R)
+        x.mu = y.mu + gain @ residual
+        x.cov = (np.eye(d) - gain @ H) @ y.cov
+        ans.append(Mult_gauss(d=d, mu=x.mu.copy(), cov=x.cov.copy()))
+    return ans
 
+# Make 1D simulation
 
-
-
-
-# Make simulation
 state = Gauss()
 diff = Gauss(mu=1, var=4)
 car = Target(30, 2)
@@ -82,6 +95,6 @@ plt.plot(res, label="Filter result")
 data = [elem.mu for elem in measurements]
 plt.plot(data, label="Measurements")
 plt.legend(loc="best")
-# plt.show()
-q = Mult_gauss()
-print(q)
+plt.show()
+
+# Make 2D simulation

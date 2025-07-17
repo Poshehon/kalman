@@ -85,15 +85,19 @@ def multikalman(
     return ans
 
 def robot_generator(x_0, y_0, v_x, v_y, var, n):
-    '''
     xs = [x_0]
     ys = [y_0]
     for _ in range(n):
-        x_0 = x_0 + np.random.randn() * var
+        x_0 = x_0 + np.random.randn() * var + v_x
         xs.append(x_0)
-        y
-        '''
-    pass
+        y_0 = y_0 + np.random.randn() * var + v_y
+        ys.append(y_0)
+    ans = []
+    for i in range(n):
+        z = np.array([[xs[i]],
+              [ys[i]]])
+        ans.append(z)
+    return ans
         
 
 # Make 1D simulation
@@ -109,36 +113,55 @@ plt.plot(data, label="Measurements")
 plt.legend(loc="best")
 plt.show()
 '''
+
 # Make 2D simulation
 # Robot walks on a 2D plane. We want to predict (x, y)
 d = 4 #Because we have (x, x', y, y')^T
-x = Mult_gauss(d = 4, mu = np.array([[0.,0.,0.,0.]]), cov = 500*np.eye(4,4)) #Random guess
-print(x)
+x = Mult_gauss(d = 4, mu = np.array([[0.], [0.] ,[0.],[0.]]), cov = 500*np.eye(4,4)) #Random guess
+# print(x)
 # For F we will use Newton law
 delta = 0.1 #Time step
 F = np.array([[1, delta, 0, 0],
      [0, 1, 0, 0],
      [0, 0, 1, delta],
      [0, 0, 0, 1]])
-print(f'F =\n{F}')
+# print(f'F =\n{F}')
 # We have no control
 B = np.zeros((4,1))
-print(f'B =\n{B}')
-u = [[0]]
+# print(f'B =\n{B}')
+u = np.zeros((1,1))
 # Found H matrix 2*4 (our measurement (x, y))
 H = np.array([[1., 0., 0., 0.],
               [0., 0., 1., 0.]])
-print(f'H =\n{H}')
+# print(f'H =\n{H}')
 # Assume that detectors are independent with dispersion 5
 R = 5 * np.eye(2,2)
-print(f'R =\n{R}')
+# print(f'R =\n{R}')
 # Q matrix 4 * 4
 Q = np.array([[0.25 * delta ** 4, 0.5 * delta ** 3, 0, 0],
      [0.5 * delta ** 3, delta ** 2, 0, 0],
      [0, 0, 0.25 * delta ** 4, 0.5 * delta ** 3],
      [0, 0, 0.5 * delta ** 3, delta ** 2]])
-print(f'Q =\n{Q}')
+# print(f'Q =\n{Q}')
 # Now we have all parameters
 # Generate mesurements
-# robot_generator()
+measurements = robot_generator(7, 10, 2, 1, 5, 200)
+boof = multikalman(d, x, F, u, B, H, R, measurements, Q)
+resx = [elem.mu[0][0] for elem in boof]
+resy = [elem.mu[2][0] for elem in boof]
+measx = [elem[0] for elem in measurements]
+measy = [elem[1] for elem in measurements]
+# x graph
+'''
+plt.plot(resx, label="Filter result")
+plt.plot(measx, label="Measurements")
+plt.legend(loc="best")
+plt.show()
+'''
+# y graph
+plt.plot(resy, label="Filter result")
+plt.plot(measy, label="Measurements")
+plt.legend(loc="best")
+plt.show()
+
 
